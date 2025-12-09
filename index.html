@@ -1,1 +1,528 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel → data.js Converter | Zalavad Patidar Directory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- SheetJS for Excel reading -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 14px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    main {
+      padding: 16px 0 24px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    h3 {
+      margin: 12px 0 6px;
+      font-size: 15px;
+    }
+    ol, ul {
+      margin: 4px 0 0 20px;
+      font-size: 13px;
+      color: #4b5563;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    input[type="file"] {
+      padding: 6px;
+      font-size: 13px;
+    }
+
+    .mapping-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .map-item {
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .map-item label {
+      font-weight: 600;
+      color: #4b5563;
+    }
+    select {
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      font-size: 13px;
+    }
+    select:focus {
+      outline: none;
+      border-color: #111827;
+      box-shadow: 0 0 0 1px rgba(17,24,39,0.08);
+    }
+
+    .btn-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      border-radius: 999px;
+      border: 1px solid #111827;
+      background: #111827;
+      color: #ffffff;
+      padding: 7px 16px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #ffffff;
+      color: #111827;
+      border-color: #d1d5db;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      margin-top: 8px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      background: #0b1120;
+      color: #e5e7eb;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+      resize: vertical;
+      white-space: pre;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      margin-left: 4px;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1>Excel → data.js Converter</h1>
+    <p>Zalavad Patidar Business Directory માટે Excel file થી <code>directoryData</code> JS file ready કરો.</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- INSTRUCTIONS -->
+  <section class="card">
+    <h2>1. Excel કેવી હોવી જોઈએ? (Header Instruction)</h2>
+    <p style="font-size:13px;margin:4px 0 6px;">
+      Excel ની <strong>પહેલી line (Row 1)</strong> માં exact header નીચે મુજબ રાખવા best રહેશે:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field (JS)</th>
+          <th>Excel Header (Row 1)</th>
+          <th>Example value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>fullName</code></td>
+          <td><code>Full Name</code></td>
+          <td>VARMORA JIGAR MANHARBHAI</td>
+        </tr>
+        <tr>
+          <td><code>whatsapp</code></td>
+          <td><code>WhatsApp</code> અથવા <code>Mobile</code></td>
+          <td>9409490194</td>
+        </tr>
+        <tr>
+          <td><code>village</code></td>
+          <td><code>Village</code></td>
+          <td>SARA</td>
+        </tr>
+        <tr>
+          <td><code>taluka</code></td>
+          <td><code>Taluka</code></td>
+          <td>Muli</td>
+        </tr>
+        <tr>
+          <td><code>bloodGroup</code></td>
+          <td><code>Blood Group</code></td>
+          <td>B+</td>
+        </tr>
+        <tr>
+          <td><code>businessName</code></td>
+          <td><code>Business Name</code></td>
+          <td>BHIMANI INTERNATIONAL LLP</td>
+        </tr>
+        <tr>
+          <td><code>businessType</code></td>
+          <td><code>Business Type</code></td>
+          <td>EXPORT</td>
+        </tr>
+        <tr>
+          <td><code>email</code></td>
+          <td><code>Email</code></td>
+          <td>example@gmail.com</td>
+        </tr>
+        <tr>
+          <td><code>website</code></td>
+          <td><code>Website</code></td>
+          <td>www.example.com</td>
+        </tr>
+        <tr>
+          <td><code>address</code></td>
+          <td><code>Address</code></td>
+          <td>MAHENDRANAGAR CHOWKDI</td>
+        </tr>
+        <tr>
+          <td><code>visitingCard</code></td>
+          <td><code>Visiting Card</code></td>
+          <td>https://link-to-image</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="small">
+      👉 જો તારી હાલની Excel માં header થોડા અલગ હોય તો tension નહીં – નીચે mapping dropdown માંથી manually select કરી શકશો.
+    </p>
+  </section>
+
+  <!-- UPLOAD + MAPPING -->
+  <section class="card">
+    <h2>2. Excel upload કરો</h2>
+
+    <div class="upload-section">
+      <div>
+        <strong>Step 1:</strong> Excel file પસંદ કરો
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      <div class="small">
+        Supported: <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code>
+      </div>
+    </div>
+
+    <h3>Step 2: Column mapping (જો auto match ખોટું હોય તો બદલી દો)</h3>
+    <div id="mappingSection" style="display:none;">
+      <p class="small">
+        નીચે Excel ના header દેખાશે. દરેક JS field માટે સાચો column select કરો.
+      </p>
+      <div class="mapping-grid" id="mappingGrid"></div>
+    </div>
+
+    <div class="btn-row">
+      <button id="generateBtn" disabled>Generate JS (data.js content)</button>
+      <button id="downloadBtn" class="secondary" disabled>Download data.js</button>
+    </div>
+  </section>
+
+  <!-- OUTPUT -->
+  <section class="card">
+    <h2>3. Output JS (copy / edit)</h2>
+    <p class="small">
+      નીચે generate થયેલો code છે. એને <code>data.js</code> file માં paste કરો (કિંવા નીચેના Download બટનથી સીધું file લો).
+    </p>
+    <textarea id="outputArea" placeholder="// data.js અહીં દેખાશે..."></textarea>
+  </section>
+
+</main>
+
+<script>
+  let headerRow = [];
+  let dataRows = [];
+  let mappings = {};
+  let lastJsText = "";
+
+  const fileInput = document.getElementById("fileInput");
+  const mappingSection = document.getElementById("mappingSection");
+  const mappingGrid = document.getElementById("mappingGrid");
+  const generateBtn = document.getElementById("generateBtn");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const outputArea = document.getElementById("outputArea");
+
+  const FIELD_DEFS = [
+    { key: "fullName",     label: "Full Name",    hint: "Memberનું નામ (JS: fullName)" },
+    { key: "whatsapp",     label: "WhatsApp",     hint: "Mobile / WhatsApp નંબર" },
+    { key: "village",      label: "Village",      hint: "ગામ" },
+    { key: "taluka",       label: "Taluka",       hint: "તાલુકો" },
+    { key: "bloodGroup",   label: "Blood Group",  hint: "Blood ગ્રુપ" },
+    { key: "businessName", label: "Business Name",hint: "બિઝનેસનું નામ" },
+    { key: "businessType", label: "Business Type",hint: "બિઝનેસ કયો પ્રકાર" },
+    { key: "email",        label: "Email",        hint: "ઈમેઈલ (optional)" },
+    { key: "website",      label: "Website",      hint: "Website / Link (optional)" },
+    { key: "address",      label: "Address",      hint: "Business address" },
+    { key: "visitingCard", label: "Visiting Card",hint: "Visiting card link / image URL" }
+  ];
+
+  function autoGuessIndex(fieldKey) {
+    const lowerHeaders = headerRow.map(h => (h || "").toString().toLowerCase());
+    function find(...keywords) {
+      for (let i = 0; i < lowerHeaders.length; i++) {
+        const h = lowerHeaders[i];
+        if (!h) continue;
+        if (keywords.some(kw => h.includes(kw))) return i;
+      }
+      return -1;
+    }
+
+    switch (fieldKey) {
+      case "fullName":     return find("name","full name","member");
+      case "whatsapp":     return find("whats","mobile","phone","contact");
+      case "village":      return find("village","gam","ગામ");
+      case "taluka":       return find("taluka","તાલુકા");
+      case "bloodGroup":   return find("blood","group");
+      case "businessName": return find("business name","firm","company","business");
+      case "businessType": return find("business type","type","category");
+      case "email":        return find("email","mail");
+      case "website":      return find("website","site","url","link");
+      case "address":      return find("address","add","સરનામું","સરનામુ");
+      case "visitingCard": return find("visiting","card","vc");
+      default: return -1;
+    }
+  }
+
+  function renderMappingUI() {
+    mappingGrid.innerHTML = "";
+    mappings = {};
+
+    FIELD_DEFS.forEach(field => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "map-item";
+
+      const autoIndex = autoGuessIndex(field.key);
+      mappings[field.key] = autoIndex;
+
+      const label = document.createElement("label");
+      label.textContent = field.label + " ";
+      const span = document.createElement("span");
+      span.className = "badge";
+      span.textContent = "JS: " + field.key;
+      label.appendChild(span);
+
+      const small = document.createElement("div");
+      small.className = "small";
+      small.textContent = field.hint;
+
+      const select = document.createElement("select");
+      select.dataset.fieldKey = field.key;
+
+      const optNone = document.createElement("option");
+      optNone.value = "-1";
+      optNone.textContent = "— (skip / ખાલી રાખો)";
+      select.appendChild(optNone);
+
+      headerRow.forEach((h, idx) => {
+        const opt = document.createElement("option");
+        opt.value = idx;
+        opt.textContent = h || ("Column " + (idx+1));
+        if (idx === autoIndex) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener("change", () => {
+        mappings[field.key] = parseInt(select.value, 10);
+      });
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(small);
+      wrapper.appendChild(select);
+      mappingGrid.appendChild(wrapper);
+    });
+
+    mappingSection.style.display = "block";
+    generateBtn.disabled = false;
+  }
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const data = evt.target.result;
+      let workbook;
+      try {
+        workbook = XLSX.read(data, { type: "binary" });
+      } catch (err) {
+        alert("Excel read error. કૃપા કરીને valid .xlsx/.xls/.csv file આપો.");
+        console.error(err);
+        return;
+      }
+      const firstSheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[firstSheetName];
+
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+      if (!rows.length) {
+        alert("Sheet ખાલી છે.");
+        return;
+      }
+
+      headerRow = rows[0];
+      dataRows = rows.slice(1);
+
+      if (!headerRow || !headerRow.length) {
+        alert("Header row નથી મળી. Excel ની પહેલી lineમાં header હોવી જોઈએ.");
+        return;
+      }
+
+      renderMappingUI();
+      outputArea.value = "// File loaded: " + file.name + "\n// હવે Generate JS બટન દબાવો.\n";
+      downloadBtn.disabled = true;
+      lastJsText = "";
+    };
+
+    reader.readAsBinaryString(file);
+  });
+
+  function escapeJsString(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n");
+  }
+
+  generateBtn.addEventListener("click", () => {
+    if (!dataRows.length || !headerRow.length) {
+      alert("પહેલાં Excel upload કરો.");
+      return;
+    }
+
+    const records = [];
+    for (const row of dataRows) {
+      const obj = {};
+      FIELD_DEFS.forEach(field => {
+        const colIndex = mappings[field.key];
+        if (colIndex !== undefined && colIndex >= 0) {
+          obj[field.key] = row[colIndex] || "";
+        } else {
+          obj[field.key] = "";
+        }
+      });
+
+      const allEmpty = Object.values(obj).every(v => (v === null || v === undefined || v === ""));
+      if (!allEmpty) records.push(obj);
+    }
+
+    let js = "// ZALAVAD PATIDAR BUSINESS DIRECTORY DATA\n\n";
+    js += "var directoryData = [\n";
+
+    records.forEach((r, idx) => {
+      js += "  {\n";
+      FIELD_DEFS.forEach((field, fIdx) => {
+        const val = escapeJsString(r[field.key]);
+        js += `    ${field.key}: "${val}"`;
+        js += (fIdx < FIELD_DEFS.length - 1) ? ",\n" : "\n";
+      });
+      js += (idx < records.length - 1) ? "  },\n" : "  }\n";
+    });
+
+    js += "];\n";
+
+    outputArea.value = js;
+    lastJsText = js;
+    downloadBtn.disabled = records.length === 0;
+  });
+
+  downloadBtn.addEventListener("click", () => {
+    if (!lastJsText) {
+      alert("પહેલાં Generate JS કરો.");
+      return;
+    }
+    const blob = new Blob([lastJsText], { type: "application/javascript;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.js";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>
+</body>
+</html>
